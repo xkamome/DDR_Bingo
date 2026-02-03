@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビンゴメーカー | Bingo Maker | 賓果產生器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        /* 語言切換 */
+        .lang-switcher {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .lang-btn {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+        }
+
+        /* 起始畫面 */
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            gap: 30px;
+        }
+
+        .start-screen h1 {
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(105, 240, 174, 0.5);
+        }
+
+        .start-screen .subtitle {
+            color: #aaa;
+            text-align: center;
+        }
+
+        .size-selection {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .size-btn {
+            padding: 30px 50px;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            border: 3px solid transparent;
+            border-radius: 16px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .size-btn:hover {
+            transform: scale(1.05);
+            border-color: #69f0ae;
+            box-shadow: 0 10px 30px rgba(105, 240, 174, 0.3);
+        }
+
+        .load-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .load-section h3 {
+            margin-bottom: 15px;
+            color: #aaa;
+        }
+
+        .code-input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .code-input {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            text-align: center;
+            letter-spacing: 3px;
+            width: 150px;
+        }
+
+        .code-input::placeholder {
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+        }
+
+        .load-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .load-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* 主要版面 */
+        .main-layout {
+            display: none;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-layout.active {
+            display: flex;
+        }
+
+        .bingo-section {
+            flex: 1;
+            max-width: 800px;
+        }
+
+        .log-section {
+            width: 350px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            text-shadow: 0 0 20px rgba(105, 240, 174, 0.5);
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bingo-code {
+            background: rgba(105, 240, 174, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* 統計 */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        .stat-item.completed .stat-number { color: #69f0ae; }
+        .stat-item.almost .stat-number { color: #ffff00; }
+        .stat-item.pending .stat-number { color: #636e72; }
+        .stat-item.lines .stat-number { color: #ff6b6b; }
+
+        /* 圖例 */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .legend-color.completed { background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%); }
+        .legend-color.almost { background: linear-gradient(135deg, #ffd600 0%, #ffff00 100%); }
+        .legend-color.pending { background: linear-gradient(135deg, #2d3436 0%, #636e72 100%); }
+
+        /* 賓果格 */
+        .bingo-grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .bingo-grid.size-3 { grid-template-columns: repeat(3, 1fr); }
+        .bingo-grid.size-4 { grid-template-columns: repeat(4, 1fr); }
+        .bingo-grid.size-5 { grid-template-columns: repeat(5, 1fr); }
+
+        .bingo-cell {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            text-align: center;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bingo-cell::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bingo-cell:hover::before { opacity: 1; }
+        .bingo-cell:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .bingo-cell.completed {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            border-color: #00e676;
+            box-shadow: 0 0 20px rgba(0, 200, 83, 0.4);
+        }
+
+        .bingo-cell.almost {
+            background: linear-gradient(135deg, #ffd600 0%, #ffff00 100%);
+            border-color: #ffea00;
+            box-shadow: 0 0 20px rgba(255, 214, 0, 0.4);
+            color: #333;
+        }
+
+        .bingo-cell.empty {
+            border: 2px dashed rgba(255,255,255,0.3);
+            background: transparent;
+        }
+
+        .bingo-cell.empty:hover {
+            border-color: #69f0ae;
+        }
+
+        .cell-title {
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 2px;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .cell-target {
+            font-size: 0.65rem;
+            opacity: 0.8;
+            word-break: break-word;
+        }
+
+        .cell-status {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 0.9rem;
+        }
+
+        .cell-difficulty {
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            right: 0;
+            font-size: 0.7rem;
+            color: #ffd700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .bingo-cell.almost .cell-difficulty {
+            color: #b8860b;
+            text-shadow: none;
+        }
+
+        .empty-hint {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* 按鈕列 */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        /* Log Section */
+        .log-section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #69f0ae;
+        }
+
+        .log-input-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .log-input-area input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .log-input-area input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .log-input-area button {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .log-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+            border-left: 4px solid #69f0ae;
+        }
+
+        .log-item .log-date {
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .log-item .log-content {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .log-item .delete-log {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.6;
+        }
+
+        .log-item .delete-log:hover { opacity: 1; }
+
+        .log-empty {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+            font-size: 0.9rem;
+        }
+
+        /* 編輯彈窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            border: 2px solid rgba(105, 240, 174, 0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #69f0ae;
+            text-align: center;
+        }
+
+        .modal-field {
+            margin-bottom: 15px;
+        }
+
+        .modal-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .modal-field input,
+        .modal-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+
+        .modal-field select option {
+            background: #1a1a2e;
+        }
+
+        .difficulty-stars {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .difficulty-stars span {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #636e72;
+            transition: color 0.2s;
+        }
+
+        .difficulty-stars span.active {
+            color: #ffd700;
+        }
+
+        .difficulty-stars span:hover {
+            color: #ffea00;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-buttons .save-btn {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            color: #fff;
+        }
+
+        .modal-buttons .cancel-btn {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .modal-buttons .delete-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: #fff;
+            flex: 0.5;
+        }
+
+        /* Toast 通知 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 8px;
+            z-index: 2000;
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* RWD */
+        @media (max-width: 1000px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            .bingo-section { max-width: 100%; }
+            .log-section {
+                width: 100%;
+                position: static;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header { flex-direction: column; text-align: center; }
+            .stats-bar { flex-direction: column; align-items: center; }
+            .cell-title { font-size: 0.6rem; }
+            .cell-target { font-size: 0.5rem; }
+            .cell-difficulty { font-size: 0.6rem; }
+            .action-btn { padding: 8px 12px; font-size: 0.75rem; }
+            .lang-switcher { top: 10px; right: 10px; }
+            .lang-btn { padding: 4px 8px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 語言切換 -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLanguage('ja')">日本語</button>
+        <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+    </div>
+
+    <!-- 起始畫面 -->
+    <div class="start-screen" id="startScreen">
+        <h1 data-i18n="title">🎯 ビンゴメーカー</h1>
+        <p class="subtitle" data-i18n="subtitle">サイズを選んで新しいビンゴを作成、またはコードで既存のビンゴを読み込み</p>
+
+        <div class="size-selection">
+            <button class="size-btn" onclick="createNewBingo(3)">3 × 3</button>
+            <button class="size-btn" onclick="createNewBingo(4)">4 × 4</button>
+            <button class="size-btn" onclick="createNewBingo(5)">5 × 5</button>
+        </div>
+
+        <div class="load-section">
+            <h3 data-i18n="loadExisting">または既存のビンゴを読み込む</h3>
+            <div class="code-input-group">
+                <input type="text" class="code-input" id="loadCodeInput" data-i18n-placeholder="codeInputPlaceholder" placeholder="6桁入力" maxlength="6" oninput="this.value = this.value.toUpperCase()">
+                <button class="load-btn" onclick="loadBingoByCode()" data-i18n="loadBtn">読込</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要版面 -->
+    <div class="main-layout" id="mainLayout">
+        <div class="bingo-section">
+            <div class="header">
+                <h1 id="bingoTitle" data-i18n="myBingo">マイビンゴ</h1>
+                <div class="header-info">
+                    <span class="bingo-code" id="bingoCode">ABC123</span>
+                    <button class="back-btn" onclick="backToStart()" data-i18n="backBtn">← 戻る</button>
+                </div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stats">
+                    <div class="stat-item completed">
+                        <div class="stat-number" id="completedCount">0</div>
+                        <div class="stat-label" data-i18n="statCompleted">達成</div>
+                    </div>
+                    <div class="stat-item almost">
+                        <div class="stat-number" id="almostCount">0</div>
+                        <div class="stat-label" data-i18n="statAlmost">進行中</div>
+                    </div>
+                    <div class="stat-item pending">
+                        <div class="stat-number" id="pendingCount">0</div>
+                        <div class="stat-label" data-i18n="statPending">未着手</div>
+                    </div>
+                    <div class="stat-item lines">
+                        <div class="stat-number" id="linesCount">0</div>
+                        <div class="stat-label" data-i18n="statLines">ライン</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color completed"></div>
+                    <span data-i18n="legendCompleted">達成 ✓</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color almost"></div>
+                    <span data-i18n="legendAlmost">進行中 ⚡</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color pending"></div>
+                    <span data-i18n="legendPending">未着手</span>
+                </div>
+            </div>
+
+            <div class="bingo-grid" id="bingoGrid"></div>
+
+            <div class="action-buttons">
+                <button class="action-btn primary" onclick="shareBingo()" data-i18n="btnShare">📤 共有</button>
+                <button class="action-btn secondary" onclick="saveAsImage()" data-i18n="btnSaveImage">📷 画像保存</button>
+                <button class="action-btn warning" onclick="shuffleBingo()" data-i18n="btnShuffle">🔀 シャッフル</button>
+                <button class="action-btn secondary" onclick="restoreOrder()" data-i18n="btnRestore">↩️ 元に戻す</button>
+                <button class="action-btn danger" onclick="resetAllCells()" data-i18n="btnReset">🗑️ 全リセット</button>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h2 data-i18n="logTitle">📝 達成記録</h2>
+            <div class="log-input-area">
+                <input type="text" id="logInput" data-i18n-placeholder="logInputPlaceholder" placeholder="記録を入力..." onkeypress="handleLogKeypress(event)">
+                <button onclick="addLog()">+</button>
+            </div>
+            <div class="log-list" id="logList">
+                <div class="log-empty" data-i18n="logEmpty">まだ記録がありません。始めましょう！</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯彈窗 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3 data-i18n="editModalTitle">マス編集</h3>
+            <div class="modal-field">
+                <label data-i18n="editLabelTitle">タイトル（曲名）</label>
+                <input type="text" id="editTitle" data-i18n-placeholder="editTitlePlaceholder" placeholder="例：EGOISM 440">
+            </div>
+            <div class="modal-field">
+                <label data-i18n="editLabelTarget">目標</label>
+                <input type="text" id="editTarget" data-i18n-placeholder="editTargetPlaceholder" placeholder="例：95以上、フルコン、クリア">
+            </div>
+            <div class="modal-field">
+                <label data-i18n="editLabelDifficulty">難易度</label>
+                <div class="difficulty-stars" id="difficultyStars">
+                    <span onclick="setDifficulty(1)">★</span>
+                    <span onclick="setDifficulty(2)">★</span>
+                    <span onclick="setDifficulty(3)">★</span>
+                    <span onclick="setDifficulty(4)">★</span>
+                    <span onclick="setDifficulty(5)">★</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="delete-btn" onclick="deleteCell()" data-i18n="btnDelete">削除</button>
+                <button class="cancel-btn" onclick="closeModal()" data-i18n="btnCancel">キャンセル</button>
+                <button class="save-btn" onclick="saveCell()" data-i18n="btnSave">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- html2canvas 用於截圖 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <script>
+        // ===== 多語言翻譯 =====
+        const translations = {
+            ja: {
+                title: '🎯 ビンゴメーカー',
+                subtitle: 'サイズを選んで新しいビンゴを作成、またはコードで既存のビンゴを読み込み',
+                loadExisting: 'または既存のビンゴを読み込む',
+                codeInputPlaceholder: '6桁入力',
+                loadBtn: '読込',
+                myBingo: 'マイビンゴ',
+                backBtn: '← 戻る',
+                statCompleted: '達成',
+                statAlmost: '進行中',
+                statPending: '未着手',
+                statLines: 'ライン',
+                legendCompleted: '達成 ✓',
+                legendAlmost: '進行中 ⚡',
+                legendPending: '未着手',
+                btnShare: '📤 共有',
+                btnSaveImage: '📷 画像保存',
+                btnShuffle: '🔀 シャッフル',
+                btnRestore: '↩️ 元に戻す',
+                btnReset: '🗑️ 全リセット',
+                logTitle: '📝 達成記録',
+                logInputPlaceholder: '記録を入力...',
+                logEmpty: 'まだ記録がありません。始めましょう！',
+                editModalTitle: 'マス編集',
+                editLabelTitle: 'タイトル（曲名）',
+                editTitlePlaceholder: '例：EGOISM 440',
+                editLabelTarget: '目標',
+                editTargetPlaceholder: '例：95以上、フルコン、クリア',
+                editLabelDifficulty: '難易度',
+                btnDelete: '削除',
+                btnCancel: 'キャンセル',
+                btnSave: '保存',
+                // Toast messages
+                toastCreated: (size, code) => `${size}×${size} ビンゴを作成しました！コード：${code}`,
+                toastLoaded: '読み込み成功！',
+                toastSharedLoaded: '共有されたビンゴを読み込みました！',
+                toastCodeRequired: '6桁のコードを入力してください',
+                toastNotFound: 'このコードのビンゴが見つかりません',
+                toastSaved: '保存しました！',
+                toastDeleted: 'マスの内容を削除しました',
+                toastShareCopied: '共有リンクをクリップボードにコピーしました！',
+                toastImageSaved: '画像をダウンロードしました！',
+                toastShuffled: 'ビンゴをシャッフルしました！',
+                toastRestored: '元の順序に戻しました！',
+                toastNoRestore: '元に戻せる順序がありません',
+                toastReset: '全ての状態をリセットしました',
+                confirmReset: '全てのマスの状態をリセットしますか？',
+                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`
+            },
+            zh: {
+                title: '🎯 賓果產生器',
+                subtitle: '選擇尺寸建立新賓果，或輸入代碼載入已有賓果',
+                loadExisting: '或載入已有賓果',
+                codeInputPlaceholder: '輸入6碼',
+                loadBtn: '載入',
+                myBingo: '我的賓果',
+                backBtn: '← 返回',
+                statCompleted: '達成',
+                statAlmost: '進行中',
+                statPending: '未開始',
+                statLines: '連線數',
+                legendCompleted: '達成 ✓',
+                legendAlmost: '進行中 ⚡',
+                legendPending: '未開始',
+                btnShare: '📤 分享連結',
+                btnSaveImage: '📷 存成圖片',
+                btnShuffle: '🔀 打散',
+                btnRestore: '↩️ 恢復原狀',
+                btnReset: '🗑️ 全部重置',
+                logTitle: '📝 達成記錄',
+                logInputPlaceholder: '輸入記錄...',
+                logEmpty: '還沒有記錄，開始吧！',
+                editModalTitle: '編輯格子',
+                editLabelTitle: '標題（歌名）',
+                editTitlePlaceholder: '例：EGOISM 440',
+                editLabelTarget: '目標',
+                editTargetPlaceholder: '例：95以上、全接、過關',
+                editLabelDifficulty: '難度',
+                btnDelete: '刪除',
+                btnCancel: '取消',
+                btnSave: '儲存',
+                // Toast messages
+                toastCreated: (size, code) => `已建立 ${size}×${size} 賓果！代碼：${code}`,
+                toastLoaded: '載入成功！',
+                toastSharedLoaded: '已載入分享的賓果！',
+                toastCodeRequired: '請輸入 6 碼代碼',
+                toastNotFound: '找不到此代碼的賓果',
+                toastSaved: '已儲存！',
+                toastDeleted: '已刪除格子內容',
+                toastShareCopied: '分享連結已複製到剪貼簿！',
+                toastImageSaved: '圖片已下載！',
+                toastShuffled: '已打散賓果！',
+                toastRestored: '已恢復原始順序！',
+                toastNoRestore: '沒有可恢復的原始順序',
+                toastReset: '已重置所有狀態',
+                confirmReset: '確定要重置所有格子狀態嗎？',
+                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`
+            },
+            en: {
+                title: '🎯 Bingo Maker',
+                subtitle: 'Choose a size to create new bingo, or enter a code to load existing one',
+                loadExisting: 'Or load existing bingo',
+                codeInputPlaceholder: 'Enter 6-digit',
+                loadBtn: 'Load',
+                myBingo: 'My Bingo',
+                backBtn: '← Back',
+                statCompleted: 'Done',
+                statAlmost: 'In Progress',
+                statPending: 'Not Started',
+                statLines: 'Lines',
+                legendCompleted: 'Done ✓',
+                legendAlmost: 'In Progress ⚡',
+                legendPending: 'Not Started',
+                btnShare: '📤 Share',
+                btnSaveImage: '📷 Save Image',
+                btnShuffle: '🔀 Shuffle',
+                btnRestore: '↩️ Restore',
+                btnReset: '🗑️ Reset All',
+                logTitle: '📝 Achievement Log',
+                logInputPlaceholder: 'Enter log...',
+                logEmpty: 'No logs yet. Let\'s start!',
+                editModalTitle: 'Edit Cell',
+                editLabelTitle: 'Title (Song Name)',
+                editTitlePlaceholder: 'e.g.: EGOISM 440',
+                editLabelTarget: 'Goal',
+                editTargetPlaceholder: 'e.g.: 95+, Full Combo, Clear',
+                editLabelDifficulty: 'Difficulty',
+                btnDelete: 'Delete',
+                btnCancel: 'Cancel',
+                btnSave: 'Save',
+                // Toast messages
+                toastCreated: (size, code) => `Created ${size}×${size} bingo! Code: ${code}`,
+                toastLoaded: 'Loaded successfully!',
+                toastSharedLoaded: 'Loaded shared bingo!',
+                toastCodeRequired: 'Please enter a 6-digit code',
+                toastNotFound: 'Bingo not found for this code',
+                toastSaved: 'Saved!',
+                toastDeleted: 'Cell content deleted',
+                toastShareCopied: 'Share link copied to clipboard!',
+                toastImageSaved: 'Image downloaded!',
+                toastShuffled: 'Bingo shuffled!',
+                toastRestored: 'Restored original order!',
+                toastNoRestore: 'No original order to restore',
+                toastReset: 'All states reset',
+                confirmReset: 'Reset all cell states?',
+                logAchieved: (title, target) => `✓ Achieved: ${title} - ${target}`
+            }
+        };
+
+        let currentLang = localStorage.getItem('bingoLang') || 'ja';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('bingoLang', lang);
+            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+
+            // Update language buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((lang === 'ja' && btn.textContent === '日本語') ||
+                    (lang === 'zh' && btn.textContent === '中文') ||
+                    (lang === 'en' && btn.textContent === 'EN')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            applyTranslations();
+        }
+
+        function applyTranslations() {
+            const t = translations[currentLang];
+
+            // Apply text content
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+
+            // Apply placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) {
+                    el.placeholder = t[key];
+                }
+            });
+        }
+
+        function t(key, ...args) {
+            const translation = translations[currentLang][key];
+            if (typeof translation === 'function') {
+                return translation(...args);
+            }
+            return translation || key;
+        }
+
+        // ===== 全域狀態 =====
+        let currentBingo = null;
+        let editingCellIndex = null;
+        let editDifficulty = 1;
+        let originalOrder = null;
+
+        const states = ['pending', 'almost', 'completed'];
+        const stateIcons = { pending: '', almost: '⚡', completed: '✓' };
+
+        // ===== 初始化 =====
+        function init() {
+            // 設定語言
+            setLanguage(currentLang);
+
+            // 檢查 URL 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedData = urlParams.get('d');
+
+            if (sharedData) {
+                try {
+                    const decoded = decodeURIComponent(atob(sharedData));
+                    const bingoData = JSON.parse(decoded);
+                    currentBingo = bingoData;
+                    showMainLayout();
+                    renderBingo();
+                    showToast(t('toastSharedLoaded'));
+                    return;
+                } catch (e) {
+                    console.error('Cannot parse shared link', e);
+                }
+            }
+
+            // 檢查 localStorage 是否有暫存
+            const savedCode = localStorage.getItem('currentBingoCode');
+            if (savedCode) {
+                const saved = loadFromStorage(savedCode);
+                if (saved) {
+                    currentBingo = saved;
+                    showMainLayout();
+                    renderBingo();
+                    return;
+                }
+            }
+
+            // 清理過期資料（7天）
+            cleanupOldData();
+        }
+
+        // ===== 建立新賓果 =====
+        function createNewBingo(size) {
+            const code = generateCode();
+            const totalCells = size * size;
+
+            currentBingo = {
+                code: code,
+                size: size,
+                title: t('myBingo'),
+                cells: Array(totalCells).fill(null).map(() => ({
+                    title: '',
+                    target: '',
+                    difficulty: 1,
+                    state: 'pending'
+                })),
+                logs: [],
+                createdAt: Date.now(),
+                lastAccess: Date.now()
+            };
+
+            originalOrder = null;
+            saveToStorage();
+            showMainLayout();
+            renderBingo();
+            showToast(t('toastCreated', size, code));
+        }
+
+        // ===== 產生 6 碼代碼 =====
+        function generateCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // ===== 載入賓果 =====
+        function loadBingoByCode() {
+            const code = document.getElementById('loadCodeInput').value.trim().toUpperCase();
+            if (code.length !== 6) {
+                showToast(t('toastCodeRequired'));
+                return;
+            }
+
+            const saved = loadFromStorage(code);
+            if (saved) {
+                currentBingo = saved;
+                currentBingo.lastAccess = Date.now();
+                saveToStorage();
+                showMainLayout();
+                renderBingo();
+                showToast(t('toastLoaded'));
+            } else {
+                showToast(t('toastNotFound'));
+            }
+        }
+
+        // ===== localStorage 操作 =====
+        function saveToStorage() {
+            if (!currentBingo) return;
+            const key = `bingo_${currentBingo.code}`;
+            localStorage.setItem(key, JSON.stringify(currentBingo));
+            localStorage.setItem('currentBingoCode', currentBingo.code);
+        }
+
+        function loadFromStorage(code) {
+            const key = `bingo_${code}`;
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        }
+
+        function cleanupOldData() {
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('bingo_')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        if (data.lastAccess && (now - data.lastAccess > sevenDays)) {
+                            localStorage.removeItem(key);
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+
+        // ===== 顯示切換 =====
+        function showMainLayout() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('mainLayout').classList.add('active');
+        }
+
+        function backToStart() {
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('mainLayout').classList.remove('active');
+            document.getElementById('loadCodeInput').value = '';
+        }
+
+        // ===== 渲染賓果 =====
+        function renderBingo() {
+            if (!currentBingo) return;
+
+            document.getElementById('bingoCode').textContent = currentBingo.code;
+            document.getElementById('bingoTitle').textContent = currentBingo.title || t('myBingo');
+
+            const grid = document.getElementById('bingoGrid');
+            grid.className = `bingo-grid size-${currentBingo.size}`;
+            grid.innerHTML = '';
+
+            currentBingo.cells.forEach((cell, index) => {
+                const cellEl = document.createElement('div');
+                const isEmpty = !cell.title && !cell.target;
+
+                cellEl.className = `bingo-cell ${isEmpty ? 'empty' : cell.state}`;
+
+                if (isEmpty) {
+                    cellEl.innerHTML = '<span class="empty-hint">+</span>';
+                } else {
+                    cellEl.innerHTML = `
+                        <span class="cell-status">${stateIcons[cell.state]}</span>
+                        <span class="cell-title">${escapeHtml(cell.title)}</span>
+                        <span class="cell-target">${escapeHtml(cell.target)}</span>
+                        <span class="cell-difficulty">${getStars(cell.difficulty)}</span>
+                    `;
+                }
+
+                // 左鍵切換狀態
+                cellEl.onclick = (e) => {
+                    if (isEmpty) {
+                        openEditModal(index);
+                    } else {
+                        toggleCellState(index);
+                    }
+                };
+
+                // 右鍵編輯
+                cellEl.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    openEditModal(index);
+                };
+
+                grid.appendChild(cellEl);
+            });
+
+            updateStats();
+            renderLogs();
+        }
+
+        function getStars(difficulty) {
+            if (!difficulty) return '';
+            return '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
+        }
+
+        // ===== 狀態切換 =====
+        function toggleCellState(index) {
+            const cell = currentBingo.cells[index];
+            if (!cell.title && !cell.target) return;
+
+            const currentIndex = states.indexOf(cell.state);
+            const nextIndex = (currentIndex + 1) % states.length;
+            cell.state = states[nextIndex];
+
+            if (cell.state === 'completed') {
+                addLogEntry(t('logAchieved', cell.title, cell.target));
+            }
+
+            currentBingo.lastAccess = Date.now();
+            saveToStorage();
+            renderBingo();
+        }
+
+        // ===== 統計更新 =====
+        function updateStats() {
+            let completed = 0, almost = 0, pending = 0;
+
+            currentBingo.cells.forEach(cell => {
+                if (!cell.title && !cell.target) return;
+                if (cell.state === 'completed') completed++;
+                else if (cell.state === 'almost') almost++;
+                else pending++;
+            });
+
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('almostCount').textContent = almost;
+            document.getElementById('pendingCount').textContent = pending;
+
+            // 計算連線數
+            const lines = calculateBingoLines();
+            document.getElementById('linesCount').textContent = lines;
+        }
+
+        // ===== 計算賓果連線 =====
+        function calculateBingoLines() {
+            const size = currentBingo.size;
+            const cells = currentBingo.cells;
+            let lines = 0;
+
+            const isLineComplete = (indices) => {
+                return indices.every(i => {
+                    const cell = cells[i];
+                    return cell && cell.title && cell.state === 'completed';
+                });
+            };
+
+            // 橫向
+            for (let row = 0; row < size; row++) {
+                const indices = [];
+                for (let col = 0; col < size; col++) {
+                    indices.push(row * size + col);
+                }
+                if (isLineComplete(indices)) lines++;
+            }
+
+            // 直向
+            for (let col = 0; col < size; col++) {
+                const indices = [];
+                for (let row = 0; row < size; row++) {
+                    indices.push(row * size + col);
+                }
+                if (isLineComplete(indices)) lines++;
+            }
+
+            // 對角線（左上到右下）
+            const diag1 = [];
+            for (let i = 0; i < size; i++) {
+                diag1.push(i * size + i);
+            }
+            if (isLineComplete(diag1)) lines++;
+
+            // 對角線（右上到左下）
+            const diag2 = [];
+            for (let i = 0; i < size; i++) {
+                diag2.push(i * size + (size - 1 - i));
+            }
+            if (isLineComplete(diag2)) lines++;
+
+            return lines;
+        }
+
+        // ===== 編輯彈窗 =====
+        function openEditModal(index) {
+            editingCellIndex = index;
+            const cell = currentBingo.cells[index];
+
+            document.getElementById('editTitle').value = cell.title || '';
+            document.getElementById('editTarget').value = cell.target || '';
+            editDifficulty = cell.difficulty || 1;
+            updateDifficultyStars();
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            editingCellIndex = null;
+        }
+
+        function setDifficulty(level) {
+            editDifficulty = level;
+            updateDifficultyStars();
+        }
+
+        function updateDifficultyStars() {
+            const stars = document.querySelectorAll('#difficultyStars span');
+            stars.forEach((star, i) => {
+                star.classList.toggle('active', i < editDifficulty);
+            });
+        }
+
+        function saveCell() {
+            if (editingCellIndex === null) return;
+
+            const title = document.getElementById('editTitle').value.trim();
+            const target = document.getElementById('editTarget').value.trim();
+
+            currentBingo.cells[editingCellIndex] = {
+                ...currentBingo.cells[editingCellIndex],
+                title: title,
+                target: target,
+                difficulty: editDifficulty
+            };
+
+            currentBingo.lastAccess = Date.now();
+            saveToStorage();
+            closeModal();
+            renderBingo();
+            showToast(t('toastSaved'));
+        }
+
+        function deleteCell() {
+            if (editingCellIndex === null) return;
+
+            currentBingo.cells[editingCellIndex] = {
+                title: '',
+                target: '',
+                difficulty: 1,
+                state: 'pending'
+            };
+
+            currentBingo.lastAccess = Date.now();
+            saveToStorage();
+            closeModal();
+            renderBingo();
+            showToast(t('toastDeleted'));
+        }
+
+        // ===== Log 記錄 =====
+        function addLog() {
+            const input = document.getElementById('logInput');
+            const content = input.value.trim();
+            if (content) {
+                addLogEntry(content);
+                input.value = '';
+            }
+        }
+
+        function addLogEntry(content) {
+            if (!currentBingo.logs) currentBingo.logs = [];
+            currentBingo.logs.unshift({
+                id: Date.now(),
+                content: content,
+                date: new Date().toISOString()
+            });
+            currentBingo.lastAccess = Date.now();
+            saveToStorage();
+            renderLogs();
+        }
+
+        function handleLogKeypress(event) {
+            if (event.key === 'Enter') addLog();
+        }
+
+        function deleteLog(id) {
+            currentBingo.logs = currentBingo.logs.filter(log => log.id !== id);
+            saveToStorage();
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const logList = document.getElementById('logList');
+            const logs = currentBingo.logs || [];
+
+            if (logs.length === 0) {
+                logList.innerHTML = `<div class="log-empty">${t('logEmpty')}</div>`;
+                return;
+            }
+
+            const locale = currentLang === 'zh' ? 'zh-TW' : currentLang === 'ja' ? 'ja-JP' : 'en-US';
+
+            logList.innerHTML = logs.map(log => {
+                const date = new Date(log.date);
+                const dateStr = date.toLocaleDateString(locale, {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `
+                    <div class="log-item">
+                        <button class="delete-log" onclick="deleteLog(${log.id})">×</button>
+                        <div class="log-date">${dateStr}</div>
+                        <div class="log-content">${escapeHtml(log.content)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== 功能按鈕 =====
+        function shareBingo() {
+            const dataStr = JSON.stringify(currentBingo);
+            const encoded = btoa(encodeURIComponent(dataStr));
+            const url = `${window.location.origin}${window.location.pathname}?d=${encoded}`;
+
+            navigator.clipboard.writeText(url).then(() => {
+                showToast(t('toastShareCopied'));
+            }).catch(() => {
+                prompt('Copy this link:', url);
+            });
+        }
+
+        function saveAsImage() {
+            const grid = document.getElementById('bingoGrid');
+
+            html2canvas(grid, {
+                backgroundColor: '#1a1a2e',
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `bingo_${currentBingo.code}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                showToast(t('toastImageSaved'));
+            });
+        }
+
+        function shuffleBingo() {
+            if (!originalOrder) {
+                originalOrder = JSON.parse(JSON.stringify(currentBingo.cells));
+            }
+
+            const cells = currentBingo.cells;
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+
+            saveToStorage();
+            renderBingo();
+            showToast(t('toastShuffled'));
+        }
+
+        function restoreOrder() {
+            if (!originalOrder) {
+                showToast(t('toastNoRestore'));
+                return;
+            }
+
+            currentBingo.cells = JSON.parse(JSON.stringify(originalOrder));
+            saveToStorage();
+            renderBingo();
+            showToast(t('toastRestored'));
+        }
+
+        function resetAllCells() {
+            if (!confirm(t('confirmReset'))) return;
+
+            currentBingo.cells.forEach(cell => {
+                cell.state = 'pending';
+            });
+
+            saveToStorage();
+            renderBingo();
+            showToast(t('toastReset'));
+        }
+
+        // ===== 工具函式 =====
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 點擊 modal 外部關閉
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeModal();
+        });
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
