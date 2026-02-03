@@ -247,7 +247,17 @@
         .stat-item.completed .stat-number { color: #69f0ae; }
         .stat-item.almost .stat-number { color: #ffff00; }
         .stat-item.pending .stat-number { color: #636e72; }
-        .stat-item.lines .stat-number { color: #ff6b6b; }
+        .stat-item.lines .stat-number {
+            color: #ff6b6b;
+            font-size: 2rem;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.6);
+        }
+        .stat-item.lines {
+            background: rgba(255, 107, 107, 0.15);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+        }
 
         /* 圖例 */
         .legend {
@@ -277,10 +287,57 @@
         .legend-color.pending { background: linear-gradient(135deg, #2d3436 0%, #636e72 100%); }
 
         /* 賓果格 */
+        .bingo-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
         .bingo-grid {
             display: grid;
             gap: 10px;
-            margin-bottom: 25px;
+            position: relative;
+        }
+
+        /* 連線效果 */
+        .bingo-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .bingo-line {
+            position: absolute;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
+            background-size: 200% 100%;
+            animation: lineGlow 2s ease-in-out infinite;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.8), 0 0 30px rgba(255, 107, 107, 0.4);
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { background-position: 0% 50%; opacity: 0.9; }
+            50% { background-position: 100% 50%; opacity: 1; }
+        }
+
+        .bingo-line.horizontal {
+            height: 6px;
+            left: 5%;
+            width: 90%;
+        }
+
+        .bingo-line.vertical {
+            width: 6px;
+            top: 5%;
+            height: 90%;
+        }
+
+        .bingo-line.diagonal {
+            height: 6px;
+            transform-origin: left center;
         }
 
         .bingo-grid.size-3 { grid-template-columns: repeat(3, 1fr); }
@@ -343,32 +400,32 @@
         }
 
         .cell-title {
-            font-size: 0.75rem;
+            font-size: 1rem;
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             line-height: 1.2;
             word-break: break-word;
         }
 
         .cell-target {
-            font-size: 0.65rem;
-            opacity: 0.8;
+            font-size: 0.85rem;
+            opacity: 0.9;
             word-break: break-word;
         }
 
         .cell-status {
             position: absolute;
-            top: 4px;
-            right: 4px;
-            font-size: 0.9rem;
+            top: 6px;
+            right: 6px;
+            font-size: 1.1rem;
         }
 
         .cell-difficulty {
             position: absolute;
-            bottom: 4px;
+            bottom: 6px;
             left: 0;
             right: 0;
-            font-size: 0.7rem;
+            font-size: 0.85rem;
             color: #ffd700;
             text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
         }
@@ -649,12 +706,14 @@
         @media (max-width: 600px) {
             .header { flex-direction: column; text-align: center; }
             .stats-bar { flex-direction: column; align-items: center; }
-            .cell-title { font-size: 0.6rem; }
-            .cell-target { font-size: 0.5rem; }
-            .cell-difficulty { font-size: 0.6rem; }
+            .cell-title { font-size: 0.8rem; }
+            .cell-target { font-size: 0.7rem; }
+            .cell-difficulty { font-size: 0.7rem; }
             .action-btn { padding: 8px 12px; font-size: 0.75rem; }
             .lang-switcher { top: 10px; right: 10px; }
             .lang-btn { padding: 4px 8px; font-size: 0.7rem; }
+            .stat-item.lines { padding: 8px 15px; }
+            .stat-item.lines .stat-number { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -733,7 +792,10 @@
                 </div>
             </div>
 
-            <div class="bingo-grid" id="bingoGrid"></div>
+            <div class="bingo-container">
+                <div class="bingo-lines" id="bingoLines"></div>
+                <div class="bingo-grid" id="bingoGrid"></div>
+            </div>
 
             <div class="action-buttons">
                 <button class="action-btn primary" onclick="shareBingo()" data-i18n="btnShare">📤 共有</button>
@@ -1239,6 +1301,7 @@
             const size = currentBingo.size;
             const cells = currentBingo.cells;
             let lines = 0;
+            const completedLines = [];
 
             const isLineComplete = (indices) => {
                 return indices.every(i => {
@@ -1253,7 +1316,10 @@
                 for (let col = 0; col < size; col++) {
                     indices.push(row * size + col);
                 }
-                if (isLineComplete(indices)) lines++;
+                if (isLineComplete(indices)) {
+                    lines++;
+                    completedLines.push({ type: 'horizontal', row: row });
+                }
             }
 
             // 直向
@@ -1262,7 +1328,10 @@
                 for (let row = 0; row < size; row++) {
                     indices.push(row * size + col);
                 }
-                if (isLineComplete(indices)) lines++;
+                if (isLineComplete(indices)) {
+                    lines++;
+                    completedLines.push({ type: 'vertical', col: col });
+                }
             }
 
             // 對角線（左上到右下）
@@ -1270,16 +1339,74 @@
             for (let i = 0; i < size; i++) {
                 diag1.push(i * size + i);
             }
-            if (isLineComplete(diag1)) lines++;
+            if (isLineComplete(diag1)) {
+                lines++;
+                completedLines.push({ type: 'diagonal1' });
+            }
 
             // 對角線（右上到左下）
             const diag2 = [];
             for (let i = 0; i < size; i++) {
                 diag2.push(i * size + (size - 1 - i));
             }
-            if (isLineComplete(diag2)) lines++;
+            if (isLineComplete(diag2)) {
+                lines++;
+                completedLines.push({ type: 'diagonal2' });
+            }
+
+            // 繪製連線
+            drawBingoLines(completedLines);
 
             return lines;
+        }
+
+        // ===== 繪製連線 =====
+        function drawBingoLines(completedLines) {
+            const linesContainer = document.getElementById('bingoLines');
+            const grid = document.getElementById('bingoGrid');
+            linesContainer.innerHTML = '';
+
+            if (completedLines.length === 0) return;
+
+            const size = currentBingo.size;
+            const gridRect = grid.getBoundingClientRect();
+            const cellSize = gridRect.width / size;
+            const gap = 10; // grid gap
+
+            completedLines.forEach((line, index) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'bingo-line';
+                lineEl.style.animationDelay = `${index * 0.2}s`;
+
+                if (line.type === 'horizontal') {
+                    lineEl.classList.add('horizontal');
+                    const topPos = (line.row * (cellSize)) + (cellSize / 2) - 3;
+                    lineEl.style.top = `${topPos}px`;
+                } else if (line.type === 'vertical') {
+                    lineEl.classList.add('vertical');
+                    const leftPos = (line.col * (cellSize)) + (cellSize / 2) - 3;
+                    lineEl.style.left = `${leftPos}px`;
+                } else if (line.type === 'diagonal1') {
+                    lineEl.classList.add('diagonal');
+                    const length = Math.sqrt(2) * gridRect.width * 0.9;
+                    lineEl.style.width = `${length}px`;
+                    lineEl.style.top = `${gridRect.height * 0.05}px`;
+                    lineEl.style.left = `${gridRect.width * 0.05}px`;
+                    lineEl.style.transform = 'rotate(45deg)';
+                    lineEl.style.transformOrigin = 'left center';
+                } else if (line.type === 'diagonal2') {
+                    lineEl.classList.add('diagonal');
+                    const length = Math.sqrt(2) * gridRect.width * 0.9;
+                    lineEl.style.width = `${length}px`;
+                    lineEl.style.top = `${gridRect.height * 0.05}px`;
+                    lineEl.style.right = `${gridRect.width * 0.05}px`;
+                    lineEl.style.left = 'auto';
+                    lineEl.style.transform = 'rotate(-45deg)';
+                    lineEl.style.transformOrigin = 'right center';
+                }
+
+                linesContainer.appendChild(lineEl);
+            });
         }
 
         // ===== 編輯彈窗 =====
