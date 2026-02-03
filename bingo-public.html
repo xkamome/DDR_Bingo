@@ -848,6 +848,24 @@
         </div>
     </div>
 
+    <!-- 模板選擇彈窗 -->
+    <div class="modal-overlay" id="templateModal">
+        <div class="modal">
+            <h3 data-i18n="templateQuestion">DDRテンプレートを使用しますか？</h3>
+            <p style="text-align: center; margin-bottom: 20px; color: #aaa; font-size: 0.9rem;">
+                24個のDDR目標からランダムで選びます
+            </p>
+            <div class="modal-buttons" style="flex-direction: column; gap: 12px;">
+                <button class="save-btn" onclick="createBingoWithTemplate(true)" data-i18n="templateYes" style="padding: 15px;">
+                    はい、ランダムで選ぶ
+                </button>
+                <button class="cancel-btn" onclick="createBingoWithTemplate(false)" data-i18n="templateNo" style="padding: 15px;">
+                    いいえ、空白で始める
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
@@ -904,7 +922,12 @@
                 toastNoRestore: '元に戻せる順序がありません',
                 toastReset: '全ての状態をリセットしました',
                 confirmReset: '全てのマスの状態をリセットしますか？',
-                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`
+                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`,
+                // Template
+                templateQuestion: 'DDRテンプレートを使用しますか？',
+                templateYes: 'はい、ランダムで選ぶ',
+                templateNo: 'いいえ、空白で始める',
+                toastTemplateApplied: 'テンプレートを適用しました！'
             },
             zh: {
                 title: '🎯 賓果產生器',
@@ -953,7 +976,12 @@
                 toastNoRestore: '沒有可恢復的原始順序',
                 toastReset: '已重置所有狀態',
                 confirmReset: '確定要重置所有格子狀態嗎？',
-                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`
+                logAchieved: (title, target) => `✓ 達成：${title} - ${target}`,
+                // Template
+                templateQuestion: '要使用 DDR 預設模板嗎？',
+                templateYes: '好，隨機選取',
+                templateNo: '不要，從空白開始',
+                toastTemplateApplied: '已套用模板！'
             },
             en: {
                 title: '🎯 Bingo Maker',
@@ -1002,7 +1030,12 @@
                 toastNoRestore: 'No original order to restore',
                 toastReset: 'All states reset',
                 confirmReset: 'Reset all cell states?',
-                logAchieved: (title, target) => `✓ Achieved: ${title} - ${target}`
+                logAchieved: (title, target) => `✓ Achieved: ${title} - ${target}`,
+                // Template
+                templateQuestion: 'Use DDR template?',
+                templateYes: 'Yes, random pick',
+                templateNo: 'No, start blank',
+                toastTemplateApplied: 'Template applied!'
             }
         };
 
@@ -1063,6 +1096,38 @@
         const states = ['pending', 'almost', 'completed'];
         const stateIcons = { pending: '', almost: '⚡', completed: '✓' };
 
+        // ===== DDR 預設模板 =====
+        const defaultTemplates = [
+            // Difficulty 1
+            { title: "Lv.17 AAA", target: "70曲達成", difficulty: 1 },
+            { title: "Lv.18 AA+", target: "70曲達成", difficulty: 1 },
+            { title: "Lv.16 平均", target: "990k 達成", difficulty: 1 },
+            { title: "EGOISM 440", target: "95以上", difficulty: 2 },
+            { title: "ENDYMION", target: "80万目標", difficulty: 2 },
+            { title: "Flare 90450", target: "達成", difficulty: 1 },
+            // Difficulty 2
+            { title: "Lv.17 AAA", target: "85曲達成", difficulty: 2 },
+            { title: "Lv.18 AA+", target: "80曲達成", difficulty: 2 },
+            { title: "Lv.18 EX", target: "1曲達成", difficulty: 2 },
+            { title: "Lv.17 PFC", target: "達成", difficulty: 2 },
+            { title: "VOLAQUAS", target: "95以上", difficulty: 3 },
+            { title: "SfV", target: "80万目標", difficulty: 3 },
+            { title: "Flare 90750", target: "達成", difficulty: 2 },
+            // Difficulty 3
+            { title: "Lv.17 AAA", target: "100曲達成", difficulty: 3 },
+            { title: "Lv.18 AA+", target: "90曲達成", difficulty: 3 },
+            { title: "Lv.18 EX", target: "5曲達成", difficulty: 3 },
+            { title: "MAX 360", target: "95以上", difficulty: 4 },
+            { title: "Lachryma", target: "80万目標", difficulty: 4 },
+            { title: "Flare 91000", target: "達成", difficulty: 3 },
+            // Difficulty 4
+            { title: "Lv.17 AAA", target: "115曲達成", difficulty: 4 },
+            { title: "Lv.18 AA+", target: "100曲達成", difficulty: 4 },
+            { title: "Lv.18 Clear", target: "達成", difficulty: 4 },
+            { title: "Flare 91440", target: "達成", difficulty: 5 },
+            { title: "自由目標", target: "カスタム", difficulty: 1 },
+        ];
+
         // ===== 初始化 =====
         function init() {
             // 設定語言
@@ -1103,20 +1168,53 @@
         }
 
         // ===== 建立新賓果 =====
+        let pendingSize = null;
+
         function createNewBingo(size) {
+            pendingSize = size;
+            showTemplateModal();
+        }
+
+        function showTemplateModal() {
+            document.getElementById('templateModal').classList.add('active');
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.remove('active');
+        }
+
+        function createBingoWithTemplate(useTemplate) {
+            closeTemplateModal();
+            const size = pendingSize;
             const code = generateCode();
             const totalCells = size * size;
+
+            let cells;
+            if (useTemplate) {
+                // 隨機從模板中選取
+                const shuffled = [...defaultTemplates].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, totalCells);
+                cells = selected.map(item => ({
+                    title: item.title,
+                    target: item.target,
+                    difficulty: item.difficulty,
+                    state: 'pending'
+                }));
+            } else {
+                // 空白賓果
+                cells = Array(totalCells).fill(null).map(() => ({
+                    title: '',
+                    target: '',
+                    difficulty: 1,
+                    state: 'pending'
+                }));
+            }
 
             currentBingo = {
                 code: code,
                 size: size,
                 title: t('myBingo'),
-                cells: Array(totalCells).fill(null).map(() => ({
-                    title: '',
-                    target: '',
-                    difficulty: 1,
-                    state: 'pending'
-                })),
+                cells: cells,
                 logs: [],
                 createdAt: Date.now(),
                 lastAccess: Date.now()
@@ -1126,7 +1224,12 @@
             saveToStorage();
             showMainLayout();
             renderBingo();
-            showToast(t('toastCreated', size, code));
+
+            if (useTemplate) {
+                showToast(t('toastTemplateApplied'));
+            } else {
+                showToast(t('toastCreated', size, code));
+            }
         }
 
         // ===== 產生 6 碼代碼 =====
