@@ -1559,8 +1559,12 @@
         function saveCell() {
             if (editingCellIndex === null) return;
 
-            const title = document.getElementById('editTitle').value.trim();
-            const target = document.getElementById('editTarget').value.trim();
+            let title = document.getElementById('editTitle').value.trim();
+            let target = document.getElementById('editTarget').value.trim();
+
+            // 過濾可能導致問題的特殊字元
+            title = sanitizeInput(title);
+            target = sanitizeInput(target);
 
             currentBingo.cells[editingCellIndex] = {
                 ...currentBingo.cells[editingCellIndex],
@@ -1574,6 +1578,16 @@
             closeModal();
             renderBingo();
             showToast(t('toastSaved'));
+        }
+
+        // 過濾特殊字元，避免 JSON/JS 語法錯誤
+        function sanitizeInput(str) {
+            if (!str) return '';
+            // 將雙引號換成單引號，移除可能導致問題的控制字元
+            return str
+                .replace(/"/g, "'")
+                .replace(/\\/g, "")
+                .replace(/[\x00-\x1F\x7F]/g, "");
         }
 
         function deleteCell() {
@@ -1668,17 +1682,40 @@
         }
 
         function saveAsImage() {
-            const grid = document.getElementById('bingoGrid');
+            // 使用整個 bingo-container（包含連線）
+            const container = document.querySelector('.bingo-container');
 
-            html2canvas(grid, {
+            // 暫時加上外框樣式
+            container.style.padding = '20px';
+            container.style.backgroundColor = '#1a1a2e';
+            container.style.borderRadius = '16px';
+            container.style.border = '3px solid #69f0ae';
+            container.style.boxShadow = '0 0 30px rgba(105, 240, 174, 0.3)';
+
+            html2canvas(container, {
                 backgroundColor: '#1a1a2e',
-                scale: 2
+                scale: 2,
+                useCORS: true
             }).then(canvas => {
+                // 移除暫時的外框樣式
+                container.style.padding = '';
+                container.style.backgroundColor = '';
+                container.style.borderRadius = '';
+                container.style.border = '';
+                container.style.boxShadow = '';
+
                 const link = document.createElement('a');
                 link.download = `bingo_${currentBingo.code}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.9);
                 link.click();
                 showToast(t('toastImageSaved'));
+            }).catch(() => {
+                // 確保失敗時也移除樣式
+                container.style.padding = '';
+                container.style.backgroundColor = '';
+                container.style.borderRadius = '';
+                container.style.border = '';
+                container.style.boxShadow = '';
             });
         }
 
