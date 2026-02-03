@@ -1096,36 +1096,36 @@
         const states = ['pending', 'almost', 'completed'];
         const stateIcons = { pending: '', almost: '⚡', completed: '✓' };
 
-        // ===== DDR 預設模板 =====
+        // ===== DDR 預設模板 (24個，5x5時最後一格為自由編輯) =====
         const defaultTemplates = [
             // Difficulty 1
             { title: "Lv.17 AAA", target: "70曲達成", difficulty: 1 },
             { title: "Lv.18 AA+", target: "70曲達成", difficulty: 1 },
-            { title: "Lv.16 平均", target: "990k 達成", difficulty: 1 },
-            { title: "EGOISM 440", target: "95以上", difficulty: 2 },
-            { title: "ENDYMION", target: "80万目標", difficulty: 2 },
-            { title: "Flare 90450", target: "達成", difficulty: 1 },
+            { title: "Lv.16 平均", target: "990000達成", difficulty: 1 },
+            { title: "EGOISM 440 (CSP)", target: "950000以上", difficulty: 2 },
+            { title: "ENDYMION (CDP)", target: "800000以上", difficulty: 2 },
+            { title: "Flare", target: "90450達成", difficulty: 1 },
             // Difficulty 2
             { title: "Lv.17 AAA", target: "85曲達成", difficulty: 2 },
             { title: "Lv.18 AA+", target: "80曲達成", difficulty: 2 },
             { title: "Lv.18 EX", target: "1曲達成", difficulty: 2 },
-            { title: "Lv.17 PFC", target: "達成", difficulty: 2 },
-            { title: "VOLAQUAS", target: "95以上", difficulty: 3 },
-            { title: "SfV", target: "80万目標", difficulty: 3 },
-            { title: "Flare 90750", target: "達成", difficulty: 2 },
+            { title: "Lv.17 PFC", target: "1曲達成", difficulty: 2 },
+            { title: "VOLAQUAS (CSP)", target: "950000以上", difficulty: 3 },
+            { title: "Over The "Period" (CDP)", target: "800000以上", difficulty: 3 },
+            { title: "Flare", target: "90750達成", difficulty: 2 },
             // Difficulty 3
             { title: "Lv.17 AAA", target: "100曲達成", difficulty: 3 },
             { title: "Lv.18 AA+", target: "90曲達成", difficulty: 3 },
             { title: "Lv.18 EX", target: "5曲達成", difficulty: 3 },
-            { title: "MAX 360", target: "95以上", difficulty: 4 },
-            { title: "Lachryma", target: "80万目標", difficulty: 4 },
-            { title: "Flare 91000", target: "達成", difficulty: 3 },
+            { title: "MAX 360 (CSP)", target: "950000以上", difficulty: 4 },
+            { title: "Lachryma (CSP)", target: "800000以上", difficulty: 4 },
+            { title: "Flare", target: "91000達成", difficulty: 3 },
             // Difficulty 4
             { title: "Lv.17 AAA", target: "115曲達成", difficulty: 4 },
             { title: "Lv.18 AA+", target: "100曲達成", difficulty: 4 },
-            { title: "Lv.18 Clear", target: "達成", difficulty: 4 },
-            { title: "Flare 91440", target: "達成", difficulty: 5 },
-            { title: "自由目標", target: "カスタム", difficulty: 1 },
+            { title: "Lv.18 FC", target: "1曲達成", difficulty: 4 },
+            { title: "Flare", target: "91440達成", difficulty: 5 },
+            { title: "Step for Victory (CSP)", target: "800000以上", difficulty: 3 },
         ];
 
         // ===== 初始化 =====
@@ -1193,13 +1193,27 @@
             if (useTemplate) {
                 // 隨機從模板中選取
                 const shuffled = [...defaultTemplates].sort(() => Math.random() - 0.5);
-                const selected = shuffled.slice(0, totalCells);
+
+                // 5x5 時需要 24 個模板 + 1 個自由格
+                const neededCells = size === 5 ? 24 : totalCells;
+                const selected = shuffled.slice(0, neededCells);
+
                 cells = selected.map(item => ({
                     title: item.title,
                     target: item.target,
                     difficulty: item.difficulty,
                     state: 'pending'
                 }));
+
+                // 5x5 時，最後一格為自由編輯
+                if (size === 5) {
+                    cells.push({
+                        title: '自由目標',
+                        target: 'カスタム',
+                        difficulty: 1,
+                        state: 'pending'
+                    });
+                }
             } else {
                 // 空白賓果
                 cells = Array(totalCells).fill(null).map(() => ({
