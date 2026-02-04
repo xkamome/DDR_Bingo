@@ -144,6 +144,19 @@
             transform: scale(1.05);
         }
 
+        /* 訪客計數 */
+        .visitor-counter {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .visitor-counter span {
+            color: #69f0ae;
+            font-weight: bold;
+        }
+
         /* 主要版面 */
         .main-layout {
             display: none;
@@ -743,6 +756,10 @@
                 <button class="load-btn" onclick="loadBingoByCode()" data-i18n="loadBtn">読込</button>
             </div>
         </div>
+
+        <div class="visitor-counter">
+            <span id="visitorCount">-</span> <span data-i18n="visitorText">個のビンゴが作成されました</span>
+        </div>
     </div>
 
     <!-- 主要版面 -->
@@ -927,7 +944,9 @@
                 templateQuestion: 'DDRテンプレートを使用しますか？',
                 templateYes: 'はい、ランダムで選ぶ',
                 templateNo: 'いいえ、空白で始める',
-                toastTemplateApplied: 'テンプレートを適用しました！'
+                toastTemplateApplied: 'テンプレートを適用しました！',
+                // Visitor
+                visitorText: '個のビンゴが作成されました'
             },
             zh: {
                 title: '🎯 賓果產生器',
@@ -981,7 +1000,9 @@
                 templateQuestion: '要使用 DDR 預設模板嗎？',
                 templateYes: '好，隨機選取',
                 templateNo: '不要，從空白開始',
-                toastTemplateApplied: '已套用模板！'
+                toastTemplateApplied: '已套用模板！',
+                // Visitor
+                visitorText: '個賓果已被創建'
             },
             en: {
                 title: '🎯 Bingo Maker',
@@ -1035,7 +1056,9 @@
                 templateQuestion: 'Use DDR template?',
                 templateYes: 'Yes, random pick',
                 templateNo: 'No, start blank',
-                toastTemplateApplied: 'Template applied!'
+                toastTemplateApplied: 'Template applied!',
+                // Visitor
+                visitorText: 'bingos have been created'
             }
         };
 
@@ -1238,6 +1261,9 @@
             saveToStorage();
             showMainLayout();
             renderBingo();
+
+            // 記錄統計
+            incrementVisitorCount();
 
             if (useTemplate) {
                 showToast(t('toastTemplateApplied'));
@@ -1778,6 +1804,50 @@
         document.getElementById('editModal').addEventListener('click', (e) => {
             if (e.target.id === 'editModal') closeModal();
         });
+
+        // ===== 訪客計數器 =====
+        const NAMESPACE = 'xkamome-ddr-bingo';
+
+        // 增加計數並更新顯示
+        function incrementVisitorCount() {
+            // 更新本地計數
+            const localCount = parseInt(localStorage.getItem('bingoCreatedCount') || '0') + 1;
+            localStorage.setItem('bingoCreatedCount', localCount.toString());
+
+            // 嘗試發送到 CountAPI（全域計數）
+            fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/creates`, { mode: 'cors' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.value) {
+                        document.getElementById('visitorCount').textContent = data.value;
+                    }
+                })
+                .catch(() => {
+                    // 如果 API 失敗，顯示本地計數
+                    document.getElementById('visitorCount').textContent = localCount;
+                });
+        }
+
+        // 取得並顯示計數
+        function loadVisitorCount() {
+            fetch(`https://api.countapi.xyz/get/${NAMESPACE}/creates`, { mode: 'cors' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.value) {
+                        document.getElementById('visitorCount').textContent = data.value;
+                    } else {
+                        document.getElementById('visitorCount').textContent = '0';
+                    }
+                })
+                .catch(() => {
+                    // API 失敗時顯示本地計數
+                    const localCount = localStorage.getItem('bingoCreatedCount') || '0';
+                    document.getElementById('visitorCount').textContent = localCount;
+                });
+        }
+
+        // 頁面載入時取得計數
+        loadVisitorCount();
 
         // 初始化
         init();
