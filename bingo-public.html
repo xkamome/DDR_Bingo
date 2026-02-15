@@ -758,7 +758,9 @@
         </div>
 
         <div class="visitor-counter">
-            <span id="visitorCount">-</span> <span data-i18n="visitorText">個のビンゴが作成されました</span>
+            🌐 全訪客累計：
+            <span id="visitorCount">-</span> 張表・
+            <span id="globalCellCount">-</span> 個格子達成
         </div>
     </div>
 
@@ -1412,6 +1414,7 @@
 
             if (cell.state === 'completed') {
                 addLogEntry(t('logAchieved', cell.title, cell.target));
+                incrementCellCount();
             }
 
             currentBingo.lastAccess = Date.now();
@@ -1806,43 +1809,66 @@
         });
 
         // ===== 訪客計數器 =====
-        const NAMESPACE = 'xkamome-ddr-bingo';
+        const FIREBASE_BASE = 'https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app';
 
-        // 增加計數並更新顯示
+        // 建立新表時：張數 +1
         function incrementVisitorCount() {
-            // 更新本地計數
-            const localCount = parseInt(localStorage.getItem('bingoCreatedCount') || '0') + 1;
-            localStorage.setItem('bingoCreatedCount', localCount.toString());
-
-            // 嘗試發送到 CountAPI（全域計數）
-            fetch(`https://api.countapi.xyz/hit/${NAMESPACE}/creates`, { mode: 'cors' })
+            const SHEETS_URL = `${FIREBASE_BASE}/globalSheets.json`;
+            fetch(SHEETS_URL)
                 .then(res => res.json())
-                .then(data => {
-                    if (data.value) {
-                        document.getElementById('visitorCount').textContent = data.value;
-                    }
+                .then(current => {
+                    const next = (current || 0) + 1;
+                    return fetch(SHEETS_URL, {
+                        method: 'PUT',
+                        body: JSON.stringify(next)
+                    }).then(() => next);
+                })
+                .then(next => {
+                    document.getElementById('visitorCount').textContent = next;
                 })
                 .catch(() => {
-                    // 如果 API 失敗，顯示本地計數
+                    const localCount = parseInt(localStorage.getItem('bingoCreatedCount') || '0') + 1;
+                    localStorage.setItem('bingoCreatedCount', localCount.toString());
                     document.getElementById('visitorCount').textContent = localCount;
                 });
         }
 
-        // 取得並顯示計數
+        // 格子達成時：格子數 +1
+        function incrementCellCount() {
+            const CELLS_URL = `${FIREBASE_BASE}/globalCells.json`;
+            fetch(CELLS_URL)
+                .then(res => res.json())
+                .then(current => {
+                    const next = (current || 0) + 1;
+                    return fetch(CELLS_URL, {
+                        method: 'PUT',
+                        body: JSON.stringify(next)
+                    }).then(() => next);
+                })
+                .then(next => {
+                    document.getElementById('globalCellCount').textContent = next;
+                })
+                .catch(() => {});
+        }
+
+        // 頁面載入時讀取兩個計數
         function loadVisitorCount() {
-            fetch(`https://api.countapi.xyz/get/${NAMESPACE}/creates`, { mode: 'cors' })
+            fetch(`${FIREBASE_BASE}/globalSheets.json`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.value) {
-                        document.getElementById('visitorCount').textContent = data.value;
-                    } else {
-                        document.getElementById('visitorCount').textContent = '0';
-                    }
+                    document.getElementById('visitorCount').textContent = data ?? 0;
                 })
                 .catch(() => {
-                    // API 失敗時顯示本地計數
-                    const localCount = localStorage.getItem('bingoCreatedCount') || '0';
-                    document.getElementById('visitorCount').textContent = localCount;
+                    document.getElementById('visitorCount').textContent = '?';
+                });
+
+            fetch(`${FIREBASE_BASE}/globalCells.json`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('globalCellCount').textContent = data ?? 0;
+                })
+                .catch(() => {
+                    document.getElementById('globalCellCount').textContent = '?';
                 });
         }
 
