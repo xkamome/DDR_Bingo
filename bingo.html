@@ -489,7 +489,9 @@
             </div>
 
             <div class="global-count">
-                🌐 全訪客累計達成：<span class="global-count-number" id="globalCount">...</span> 個目標
+                🌐 全訪客累計：
+                <span class="global-count-number" id="globalSheets">...</span> 張表・
+                <span class="global-count-number" id="globalCount">...</span> 個格子達成
             </div>
 
             <div class="bingo-grid" id="bingoGrid"></div>
@@ -599,12 +601,12 @@
             if (newState === 'completed') {
                 const goal = goals[index];
                 addLogEntry(`✓ 達成：${goal.title} - ${goal.detail}`);
-                const FIREBASE_URL = 'https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app/globalCount.json';
-                fetch(FIREBASE_URL)
+                const CELLS_URL = `${FIREBASE_BASE}/globalCells.json`;
+                fetch(CELLS_URL)
                     .then(res => res.json())
                     .then(current => {
                         const next = (current || 0) + 1;
-                        return fetch(FIREBASE_URL, {
+                        return fetch(CELLS_URL, {
                             method: 'PUT',
                             body: JSON.stringify(next)
                         }).then(() => next);
@@ -637,13 +639,35 @@
             document.getElementById('progressFill').style.width = `${progress}%`;
         }
 
+        const FIREBASE_BASE = 'https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app';
+
         async function loadGlobalCount() {
             try {
-                const res = await fetch('https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app/globalCount.json');
-                const data = await res.json();
-                document.getElementById('globalCount').textContent = data ?? 0;
+                // 讀取 cells（達成格子數）
+                const cellRes = await fetch(`${FIREBASE_BASE}/globalCells.json`);
+                const cells = await cellRes.json();
+                document.getElementById('globalCount').textContent = cells ?? 0;
+
+                // 讀取 sheets（張數）並判斷是否需要 +1
+                const sheetRes = await fetch(`${FIREBASE_BASE}/globalSheets.json`);
+                const sheets = await sheetRes.json();
+
+                const counted = localStorage.getItem('ddrBingoSheetCounted');
+                if (!counted) {
+                    // 這個裝置還沒計過，+1 並記錄
+                    const next = (sheets ?? 0) + 1;
+                    await fetch(`${FIREBASE_BASE}/globalSheets.json`, {
+                        method: 'PUT',
+                        body: JSON.stringify(next)
+                    });
+                    localStorage.setItem('ddrBingoSheetCounted', '1');
+                    document.getElementById('globalSheets').textContent = next;
+                } else {
+                    document.getElementById('globalSheets').textContent = sheets ?? 0;
+                }
             } catch (e) {
                 document.getElementById('globalCount').textContent = '?';
+                document.getElementById('globalSheets').textContent = '?';
             }
         }
 
@@ -651,7 +675,9 @@
             if (confirm('全ての目標状態をリセットしますか？')) {
                 cellStates = {};
                 localStorage.removeItem('ddrBingoStates');
+                localStorage.removeItem('ddrBingoSheetCounted');
                 createGrid();
+                loadGlobalCount();
             }
         }
 
