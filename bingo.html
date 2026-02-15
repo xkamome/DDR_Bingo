@@ -599,10 +599,18 @@
             if (newState === 'completed') {
                 const goal = goals[index];
                 addLogEntry(`✓ 達成：${goal.title} - ${goal.detail}`);
-                fetch('https://api.countapi.xyz/hit/2026ddr-bingo/completions')
+                const FIREBASE_URL = 'https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app/globalCount.json';
+                fetch(FIREBASE_URL)
                     .then(res => res.json())
-                    .then(data => {
-                        document.getElementById('globalCount').textContent = data.value;
+                    .then(current => {
+                        const next = (current || 0) + 1;
+                        return fetch(FIREBASE_URL, {
+                            method: 'PUT',
+                            body: JSON.stringify(next)
+                        }).then(() => next);
+                    })
+                    .then(next => {
+                        document.getElementById('globalCount').textContent = next;
                     })
                     .catch(() => {});
             }
@@ -631,9 +639,9 @@
 
         async function loadGlobalCount() {
             try {
-                const res = await fetch('https://api.countapi.xyz/get/2026ddr-bingo/completions');
+                const res = await fetch('https://ddr-bingo-2026-default-rtdb.asia-southeast1.firebasedatabase.app/globalCount.json');
                 const data = await res.json();
-                document.getElementById('globalCount').textContent = data.value ?? 0;
+                document.getElementById('globalCount').textContent = data ?? 0;
             } catch (e) {
                 document.getElementById('globalCount').textContent = '?';
             }
