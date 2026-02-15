@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 DDR 目標ビンゴ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .bingo-section {
+            flex: 1;
+            max-width: 700px;
+        }
+
+        .log-section {
+            width: 350px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #aaa;
+            font-size: 0.95rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .legend-color.completed {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+        }
+
+        .legend-color.almost {
+            background: linear-gradient(135deg, #ffd600 0%, #ffff00 100%);
+        }
+
+        .legend-color.pending {
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .bingo-cell {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            text-align: center;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bingo-cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bingo-cell:hover::before {
+            opacity: 1;
+        }
+
+        .bingo-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .bingo-cell.completed {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            border-color: #00e676;
+            box-shadow: 0 0 20px rgba(0, 200, 83, 0.4);
+        }
+
+        .bingo-cell.almost {
+            background: linear-gradient(135deg, #ffd600 0%, #ffff00 100%);
+            border-color: #ffea00;
+            box-shadow: 0 0 20px rgba(255, 214, 0, 0.4);
+            color: #333;
+        }
+
+        .bingo-cell.pending {
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            border-color: #636e72;
+        }
+
+        .cell-title {
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+
+        .cell-detail {
+            font-size: 0.6rem;
+            opacity: 0.8;
+        }
+
+        .cell-status {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 0.9rem;
+        }
+
+        .cell-difficulty {
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            right: 0;
+            font-size: 0.9rem;
+            color: #ffd700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .bingo-cell.almost .cell-difficulty {
+            color: #b8860b;
+            text-shadow: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .stat-item.completed .stat-number {
+            color: #69f0ae;
+        }
+
+        .stat-item.almost .stat-number {
+            color: #ffff00;
+        }
+
+        .stat-item.pending .stat-number {
+            color: #636e72;
+        }
+
+        .global-count {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .global-count-number {
+            font-weight: bold;
+            color: #74b9ff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 16px;
+            background: #2d3436;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00c853, #69f0ae);
+            transition: width 0.5s ease;
+            border-radius: 8px;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        /* Log Section Styles */
+        .log-section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #69f0ae;
+        }
+
+        .log-input-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .log-input-area input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .log-input-area input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .log-input-area button {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .log-input-area button:hover {
+            transform: scale(1.05);
+        }
+
+        .log-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+            border-left: 4px solid #69f0ae;
+        }
+
+        .log-item .log-date {
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .log-item .log-content {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .log-item .delete-log {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .log-item .delete-log:hover {
+            opacity: 1;
+        }
+
+        .log-empty {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+            font-size: 0.9rem;
+        }
+
+        .log-filter {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .log-filter button {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .log-filter button:hover,
+        .log-filter button.active {
+            background: rgba(105, 240, 174, 0.3);
+        }
+
+        .clear-logs-btn {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 8px;
+            background: rgba(231, 76, 60, 0.3);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-logs-btn:hover {
+            background: rgba(231, 76, 60, 0.5);
+        }
+
+        @media (max-width: 1000px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .bingo-section {
+                max-width: 100%;
+            }
+
+            .log-section {
+                width: 100%;
+                position: static;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .bingo-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .cell-title {
+                font-size: 0.6rem;
+            }
+
+            .cell-detail {
+                font-size: 0.5rem;
+            }
+
+            .cell-difficulty {
+                font-size: 0.7rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .legend {
+                gap: 10px;
+            }
+
+            .legend-item {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="bingo-section">
+            <h1>2026 DDR 目標ビンゴ</h1>
+            <p class="subtitle">クリックで状態を切替：未達成 → もう少し → 達成</p>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color completed"></div>
+                    <span>達成 ✓</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color almost"></div>
+                    <span>もう少し ⚡</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color pending"></div>
+                    <span>未達成</span>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item completed">
+                    <div class="stat-number" id="completedCount">0</div>
+                    <div class="stat-label">達成</div>
+                </div>
+                <div class="stat-item almost">
+                    <div class="stat-number" id="almostCount">0</div>
+                    <div class="stat-label">もう少し</div>
+                </div>
+                <div class="stat-item pending">
+                    <div class="stat-number" id="pendingCount">0</div>
+                    <div class="stat-label">未達成</div>
+                </div>
+            </div>
+
+            <div class="global-count">
+                🌐 全訪客累計達成：<span class="global-count-number" id="globalCount">...</span> 個目標
+            </div>
+
+            <div class="bingo-grid" id="bingoGrid"></div>
+
+            <button class="reset-btn" onclick="resetAll()">全てリセット</button>
+        </div>
+
+        <div class="log-section">
+            <h2>達成記録</h2>
+
+            <div class="log-input-area">
+                <input type="text" id="logInput" placeholder="記録を入力..." onkeypress="handleLogKeypress(event)">
+                <button onclick="addLog()">+</button>
+            </div>
+
+            <div class="log-filter">
+                <button class="active" onclick="filterLogs('all', this)">全て</button>
+                <button onclick="filterLogs('today', this)">今日</button>
+                <button onclick="filterLogs('week', this)">今週</button>
+                <button onclick="filterLogs('month', this)">今月</button>
+            </div>
+
+            <div class="log-list" id="logList">
+                <div class="log-empty">まだ記録がありません。達成を記録しましょう！</div>
+            </div>
+
+            <button class="clear-logs-btn" onclick="clearAllLogs()">全ての記録を削除</button>
+        </div>
+    </div>
+
+    <script>
+        // Goals sorted by difficulty (1 to 4)
+        const goals = [
+            // Difficulty 1
+            { title: "Lv.17 AAA", detail: "70曲達成", category: "score", difficulty: 1 },
+            { title: "Lv.18 AA+", detail: "70曲達成", category: "score", difficulty: 1 },
+            { title: "Lv.16 平均", detail: "990k 達成", category: "clear", difficulty: 1 },
+            { title: "EGOISM 440", detail: "95以上", category: "song", difficulty: 1 },
+            { title: "ENDYMION", detail: "80万目標", category: "song", difficulty: 1 },
+            { title: "Flare 90450", detail: "達成", category: "flare", difficulty: 1 },
+            // Difficulty 2
+            { title: "Lv.17 AAA", detail: "85曲達成", category: "score", difficulty: 2 },
+            { title: "Lv.18 AA+", detail: "80曲達成", category: "score", difficulty: 2 },
+            { title: "Lv.18 EX", detail: "1曲達成", category: "clear", difficulty: 2 },
+            { title: "Lv.17 PFC", detail: "達成", category: "pfc", difficulty: 2 },
+            { title: "VOLAQUAS", detail: "95以上", category: "song", difficulty: 2 },
+            { title: "SfV", detail: "80万目標", category: "song", difficulty: 2 },
+            { title: "Flare 90750", detail: "達成", category: "flare", difficulty: 2 },
+            // Difficulty 3
+            { title: "Lv.17 AAA", detail: "100曲達成", category: "score", difficulty: 3 },
+            { title: "Lv.18 AA+", detail: "90曲達成", category: "score", difficulty: 3 },
+            { title: "Lv.18 EX", detail: "5曲達成", category: "clear", difficulty: 3 },
+            { title: "MAX 360", detail: "95以上", category: "song", difficulty: 3 },
+            { title: "Lachryma", detail: "80万目標", category: "song", difficulty: 3 },
+            { title: "Flare 91000", detail: "達成", category: "flare", difficulty: 3 },
+            // Difficulty 4
+            { title: "Lv.17 AAA", detail: "115曲達成", category: "score", difficulty: 4 },
+            { title: "Lv.18 AA+", detail: "100曲達成", category: "score", difficulty: 4 },
+            { title: "Lv.18 Clear", detail: "達成", category: "pfc", difficulty: 4 },
+            { title: "Flare 91440", detail: "達成", category: "flare", difficulty: 4 },
+            { title: "自由目標", detail: "カスタム", category: "custom", difficulty: 0 },
+        ];
+
+        const states = ['pending', 'almost', 'completed'];
+        const stateIcons = { pending: '', almost: '⚡', completed: '✓' };
+
+        function getStars(difficulty) {
+            if (difficulty === 0) return '';
+            const filled = '★'.repeat(difficulty);
+            const empty = '☆'.repeat(4 - difficulty);
+            return filled + empty;
+        }
+
+        let cellStates = JSON.parse(localStorage.getItem('ddrBingoStates')) || {};
+        let logs = JSON.parse(localStorage.getItem('ddrBingoLogs')) || [];
+        let currentFilter = 'all';
+
+        function createGrid() {
+            const grid = document.getElementById('bingoGrid');
+            grid.innerHTML = '';
+
+            goals.forEach((goal, index) => {
+                const cell = document.createElement('div');
+                const currentState = cellStates[index] || 'pending';
+                cell.className = `bingo-cell ${currentState}`;
+                cell.innerHTML = `
+                    <span class="cell-status">${stateIcons[currentState]}</span>
+                    <span class="cell-title">${goal.title}</span>
+                    <span class="cell-detail">${goal.detail}</span>
+                    <span class="cell-difficulty">${getStars(goal.difficulty)}</span>
+                `;
+                cell.onclick = () => toggleState(index);
+                grid.appendChild(cell);
+            });
+
+            updateStats();
+        }
+
+        function toggleState(index) {
+            const currentState = cellStates[index] || 'pending';
+            const currentIndex = states.indexOf(currentState);
+            const nextIndex = (currentIndex + 1) % states.length;
+            const newState = states[nextIndex];
+            cellStates[index] = newState;
+
+            // Auto log when completing a goal
+            if (newState === 'completed') {
+                const goal = goals[index];
+                addLogEntry(`✓ 達成：${goal.title} - ${goal.detail}`);
+                fetch('https://api.countapi.xyz/hit/2026ddr-bingo/completions')
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('globalCount').textContent = data.value;
+                    })
+                    .catch(() => {});
+            }
+
+            localStorage.setItem('ddrBingoStates', JSON.stringify(cellStates));
+            createGrid();
+        }
+
+        function updateStats() {
+            let completed = 0, almost = 0, pending = 0;
+
+            goals.forEach((_, index) => {
+                const state = cellStates[index] || 'pending';
+                if (state === 'completed') completed++;
+                else if (state === 'almost') almost++;
+                else pending++;
+            });
+
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('almostCount').textContent = almost;
+            document.getElementById('pendingCount').textContent = pending;
+
+            const progress = (completed / goals.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        async function loadGlobalCount() {
+            try {
+                const res = await fetch('https://api.countapi.xyz/get/2026ddr-bingo/completions');
+                const data = await res.json();
+                document.getElementById('globalCount').textContent = data.value ?? 0;
+            } catch (e) {
+                document.getElementById('globalCount').textContent = '?';
+            }
+        }
+
+        function resetAll() {
+            if (confirm('全ての目標状態をリセットしますか？')) {
+                cellStates = {};
+                localStorage.removeItem('ddrBingoStates');
+                createGrid();
+            }
+        }
+
+        // Log functions
+        function addLog() {
+            const input = document.getElementById('logInput');
+            const content = input.value.trim();
+            if (content) {
+                addLogEntry(content);
+                input.value = '';
+            }
+        }
+
+        function addLogEntry(content) {
+            const log = {
+                id: Date.now(),
+                content: content,
+                date: new Date().toISOString()
+            };
+            logs.unshift(log);
+            localStorage.setItem('ddrBingoLogs', JSON.stringify(logs));
+            renderLogs();
+        }
+
+        function handleLogKeypress(event) {
+            if (event.key === 'Enter') {
+                addLog();
+            }
+        }
+
+        function deleteLog(id) {
+            logs = logs.filter(log => log.id !== id);
+            localStorage.setItem('ddrBingoLogs', JSON.stringify(logs));
+            renderLogs();
+        }
+
+        function clearAllLogs() {
+            if (confirm('全ての記録を削除しますか？')) {
+                logs = [];
+                localStorage.removeItem('ddrBingoLogs');
+                renderLogs();
+            }
+        }
+
+        function filterLogs(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.log-filter button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderLogs();
+        }
+
+        function getFilteredLogs() {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            return logs.filter(log => {
+                const logDate = new Date(log.date);
+                switch (currentFilter) {
+                    case 'today':
+                        return logDate >= today;
+                    case 'week':
+                        return logDate >= weekAgo;
+                    case 'month':
+                        return logDate >= monthAgo;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        function renderLogs() {
+            const logList = document.getElementById('logList');
+            const filteredLogs = getFilteredLogs();
+
+            if (filteredLogs.length === 0) {
+                logList.innerHTML = '<div class="log-empty">まだ記録がありません。達成を記録しましょう！</div>';
+                return;
+            }
+
+            logList.innerHTML = filteredLogs.map(log => {
+                const date = new Date(log.date);
+                const dateStr = date.toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `
+                    <div class="log-item">
+                        <button class="delete-log" onclick="deleteLog(${log.id})">×</button>
+                        <div class="log-date">${dateStr}</div>
+                        <div class="log-content">${escapeHtml(log.content)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        createGrid();
+        renderLogs();
+        loadGlobalCount();
+    </script>
+</body>
+</html>
